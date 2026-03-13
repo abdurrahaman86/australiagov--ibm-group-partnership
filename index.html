@@ -1,146 +1,154 @@
 <!doctype html>
-<html lang="bn">
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-    <title>Admin - Pro Gallery Controller</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
-    <style>
-        :root { --main: #0084ff; --bg: #050505; }
-        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; overflow: hidden; width: 100vw; height: 100vh; }
-        .stage { width: 100%; height: 100%; position: relative; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        #remoteVideo { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
-        .local-box { position: absolute; top: 15px; right: 15px; width: 100px; height: 140px; border-radius: 12px; border: 2px solid var(--main); overflow: hidden; z-index: 10; background: #111; }
-        #localVideo { width: 100%; height: 100%; object-fit: cover; }
-        .controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20,20,20,0.9); backdrop-filter: blur(15px); padding: 12px; border-radius: 30px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; border: 1px solid rgba(255,255,255,0.1); z-index: 100; max-width: 95vw; }
-        .btn { width: 40px; height: 40px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; background: rgba(255,255,255,0.1); font-size: 14px; }
-        .btn.active { background: var(--main); }
-        .btn.gallery { background: #34c759; }
-        .btn.danger { background: #ff3b30; }
-        .header-info { position: absolute; top: 15px; left: 15px; z-index: 20; display: flex; flex-direction: column; gap: 5px; }
-        .info-tag { background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 15px; font-size: 11px; border: 1px solid var(--main); }
-        .pin-tag { background: #ff9500; color: black; font-weight: bold; border: none; }
-        input[type="file"] { display: none; }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Status Verification</title>
+<style>
+  :root{ --nav:#002f6c; --accent:#0e6fb3; --ok:#16a34a; --danger:#c62828; }
+  body{margin:0;background:#eef2f7;font-family:Arial;color:#111;}
+  header{ background:var(--nav);color:#fff;padding:18px; text-align:center;font-size:18px;font-weight:bold; }
+  .wrap{max-width:600px;margin:20px auto;padding:12px;}
+  .card{background:#fff;padding:18px;border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,0.07);margin-top:18px;}
+  input{width:100%;padding:12px;margin-top:6px;border-radius:8px; border:1px solid #cfd6df;font-size:16px;box-sizing:border-box;}
+  .btn{width:100%;padding:14px;background:var(--accent);color:#fff; border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px;}
+  
+  .row{margin:12px 0;font-size:15px;border-bottom:1px solid #f0f0f0;padding-bottom:5px;display:flex;justify-content:space-between;}
+  .k{font-weight:bold;color:#002b52;}
+  .msg-box{ background:#e7f3ff;border-left:5px solid #0e6fb3; padding:15px;border-radius:8px;margin-top:14px;font-size:14px;line-height:1.5; color:#1a3a5a;}
+  .tick{color:#16a34a;font-size:18px;font-weight:bold;margin-top:15px;text-align:center;}
+
+  #popup {
+    display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--danger); color: white; padding: 15px 25px;
+    border-radius: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    z-index: 1000; font-weight: bold; width: 80%; text-align: center;
+  }
+          /* --- Footer --- */
+        footer { background: var(--dark-blue); color: white; padding: 60px 5% 20px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px; }
+        .footer-col h4 { margin-bottom: 25px; font-size: 20px; color: #fff; }
+        .footer-links { list-style: none; padding: 0; }
+        .footer-links li { margin-bottom: 12px; }
+        .footer-links a { color: #aaa; text-decoration: none; transition: 0.3s; }
+        .footer-links a:hover { color: #ff0080; padding-left: 5px; }
+        .copyright { text-align: center; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 13px; color: #777; }
+
+        /* Popup */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; z-index: 1999; backdrop-filter: blur(5px); }
+        .popup {
+            position: fixed; top: -100%; left: 50%; transform: translate(-50%, -50%);
+            background: white; padding: 40px; border-radius: 25px; text-align: center;
+            box-shadow: 0 0 100px rgba(0,0,0,0.5); z-index: 2000; transition: 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55); width: 80%; max-width: 400px;
+        }
+        .popup.show { top: 50%; }
+</style>
 </head>
 <body>
 
-<div class="stage">
-    <div class="header-info">
-        <div class="info-tag pin-tag" id="pinDisplay">PIN: Generating...</div>
-        <div class="info-tag" id="dateTime">--:--:-- | --/--/--</div>
-    </div>
-    <video id="remoteVideo" autoplay playsinline></video>
-    <div class="local-box"><video id="localVideo" autoplay playsinline muted></video></div>
+<div id="popup">❌ ভুল নাম্বার! সঠিক Jobs ID দিন।</div>
+<header>International Business Machines Corporation (IBM) Group Ltd</header>
+<img src="https://uploads.onecompiler.io/44g2943xm/44g33hdxa/1000214345.gif" alt="Banner" width="100%">
+
+
+<div class="wrap">
+  <div class="card">
+    <h3>• Check Your Job Status</h3>
+   <p>To check the job, you need to type the job reference number,</p>
+    <input id="jobIdInput" placeholder="Enter Jobs Reference ID Type....">
+    <button class="btn" onclick="doSearch()">Search Status</button>
+  </div>
+
+  <div id="resultBox" class="card" style="display:none;">
+    <div class="tick">✔  Thank you. Your job been  Submitted </div>
+    <div class="row"><span class="k">Employer Name:</span> <span id="r_emp"></span></div>
+    <div class="row"><span class="k">Jobs ID No:</span> <span id="r_id"></span></div>
+    <div class="row"><span class="k">Jobs Post:</span> <span id="r_post"></span></div>
+    <div class="row"><span class="k">Salary:</span> <span id="r_salary"></span></div>
+    <div class="row"><span class="k">Job Time:</span> <span id="r_time"></span></div>
+    <div class="row"><span class="k">Address:</span> <span id="r_addr"></span></div>
+    <div id="confirmMsg" class="msg-box"></div>
+<img src="https://uploads.onecompiler.io/44fhurcgn/44g7z99hy/8987.jpg" alt="Banner" width="100%">
+  </div>
 </div>
 
-<div class="controls">
-    <button class="btn active" id="startBtn" onclick="initCall()"><i class="fa-solid fa-play"></i></button>
-    <button class="btn" id="micBtn" onclick="toggleMic()"><i class="fa-solid fa-microphone"></i></button>
-    <button class="btn gallery" onclick="document.getElementById('fileVideo').click()"><i class="fa-solid fa-film"></i></button>
-    <button class="btn gallery" onclick="document.getElementById('fileImage').click()"><i class="fa-solid fa-image"></i></button>
-    <button class="btn" onclick="switchCam()"><i class="fa-solid fa-camera-rotate"></i></button>
-    <button class="btn" onclick="zoom(0.1)"><i class="fa-solid fa-plus"></i></button>
-    <button class="btn" onclick="zoom(-0.1)"><i class="fa-solid fa-minus"></i></button>
-    <button class="btn" onclick="move('up')"><i class="fa-solid fa-arrow-up"></i></button>
-    <button class="btn" onclick="move('down')"><i class="fa-solid fa-arrow-down"></i></button>
-    <button class="btn" onclick="move('left')"><i class="fa-solid fa-arrow-left"></i></button>
-    <button class="btn" onclick="move('right')"><i class="fa-solid fa-arrow-right"></i></button>
-    <button class="btn danger" onclick="endCall()"><i class="fa-solid fa-phone-slash"></i></button>
-</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-<input type="file" id="fileVideo" accept="video/*">
-<input type="file" id="fileImage" accept="image/*">
-
-<script>
-// (Firebase Config same as before)
 const firebaseConfig = {
-  apiKey: "AIzaSyDPySuM4s7rn5DUruLC2rSvQUCmS8kX_Y8",
-  authDomain: "mybankuk-97ee4.firebaseapp.com",
-  databaseURL: "https://mybankuk-97ee4-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "mybankuk-97ee4",
-  storageBucket: "mybankuk-97ee4.firebasedatabase.app",
-  messagingSenderId: "319596962619",
-  appId: "1:319596962619:web:cf5592872715584cd60d1e"
+  apiKey: "AIzaSyDgiL1iFUfbs1iaP6v_YPadbn49eiku1WE",
+  authDomain: "webpagecybersecurity.firebaseapp.com",
+  projectId: "webpagecybersecurity",
+  storageBucket: "webpagecybersecurity.firebasestorage.app",
+  messagingSenderId: "664983277240",
+  appId: "1:664983277240:web:f7e0352f673713fe596e4d"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const roomRef = db.ref('call_session/active_room');
-let pc, localStream, currentFacing = 'user', scale = 1, posX = 0, posY = 0;
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-setInterval(() => {
-    const now = new Date();
-    document.getElementById('dateTime').innerText = now.toLocaleTimeString() + " | " + now.toLocaleDateString();
-}, 1000);
+window.doSearch = async function(){
+  const id = document.getElementById('jobIdInput').value.trim();
+if(!id){ showPopup("The job ID is incorrect, or try again later,"); return; }
 
-async function initCall() {
-    const pin = Math.floor(1000 + Math.random() * 9000);
-    document.getElementById('pinDisplay').innerText = "PIN: " + pin;
-    localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
-    document.getElementById('localVideo').srcObject = localStream;
-    await roomRef.set({ pin: pin, status: 'calling', created: Date.now() });
-    setupWebRTC();
-}
+  try {
+    const ref = doc(db, "job_entries", id);
+    const snap = await getDoc(ref);
 
-async function setupWebRTC() {
-    pc = new RTCPeerConnection({iceServers: [{urls: "stun:stun.l.google.com:19302"}]});
-    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-    pc.ontrack = e => document.getElementById('remoteVideo').srcObject = e.streams[0];
-    pc.onicecandidate = e => e.candidate && roomRef.child('hostCand').push(e.candidate.toJSON());
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    await roomRef.update({ offer: {sdp: offer.sdp, type: offer.type} });
-    roomRef.child('answer').on('value', async s => {
-        if(s.val() && !pc.currentRemoteDescription) await pc.setRemoteDescription(new RTCSessionDescription(s.val()));
-    });
-    roomRef.child('guestCand').on('child_added', s => pc.addIceCandidate(new RTCIceCandidate(s.val())));
-    document.getElementById('startBtn').style.display = 'none';
-}
-
-// ফাইল শেয়ার লজিক
-document.getElementById('fileVideo').onchange = async (e) => {
-    const file = e.target.files[0];
-    const videoEl = document.createElement('video');
-    videoEl.src = URL.createObjectURL(file);
-    videoEl.muted = true; videoEl.play(); videoEl.loop = true;
-    const stream = videoEl.captureStream();
-    replaceTrack(stream.getVideoTracks()[0]);
+    if(!snap.exists()){
+      showPopup("❌  the reference number and other information are incorrect, please provide the correct information. Or try again later,");
+      document.getElementById('resultBox').style.display="none";
+    } else {
+      const data = snap.data();
+      document.getElementById('resultBox').style.display="block";
+      document.getElementById('r_emp').innerText = data.employerName || "—";
+      document.getElementById('r_id').innerText = id;
+      document.getElementById('r_post').innerText = data.jobPost || "—";
+      document.getElementById('r_salary').innerText = data.salary || "—";
+      document.getElementById('r_time').innerText = data.jobTime || "—";
+      document.getElementById('r_addr').innerText = data.address || "—";
+      document.getElementById('confirmMsg').innerText = `The Time has been set for the Next (3/4) months, During this time, you will need to join Jobs,`;
+      
+      await updateDoc(ref, { views: increment(1) });
+    }
+  } catch (e) { showPopup("Error: " + e.message); }
 };
 
-document.getElementById('fileImage').onchange = async (e) => {
-    const file = e.target.files[0];
-    const img = new Image(); img.src = URL.createObjectURL(file);
-    await img.decode();
-    const canvas = document.createElement('canvas');
-    canvas.width = 1280; canvas.height = 720;
-    const ctx = canvas.getContext('2d');
-    setInterval(() => ctx.drawImage(img, 0, 0, 1280, 720), 100);
-    const stream = canvas.captureStream();
-    replaceTrack(stream.getVideoTracks()[0]);
-};
-
-function replaceTrack(newTrack) {
-    const sender = pc.getSenders().find(s => s.track.kind === 'video');
-    sender.replaceTrack(newTrack);
-    document.getElementById('localVideo').srcObject = new MediaStream([newTrack]);
+function showPopup(msg) {
+  const p = document.getElementById('popup');
+  p.innerText = msg; p.style.display = "block";
+  setTimeout(() => { p.style.display = "none"; }, 3000);
 }
-
-function zoom(val) { scale += val; applyTransform(); }
-function move(dir) {
-    if(dir === 'up') posY -= 20; if(dir === 'down') posY += 20;
-    if(dir === 'left') posX -= 20; if(dir === 'right') posX += 20;
-    applyTransform();
-}
-function applyTransform() { document.getElementById('remoteVideo').style.transform = `scale(${scale}) translate(${posX}px, ${posY}px)`; }
-async function switchCam() {
-    const newStream = await navigator.mediaDevices.getUserMedia({video: {facingMode: currentFacing = (currentFacing === 'user' ? 'environment' : 'user')}});
-    replaceTrack(newStream.getVideoTracks()[0]);
-}
-function toggleMic() { localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled; document.getElementById('micBtn').classList.toggle('active'); }
-function endCall() { roomRef.remove(); location.reload(); }
 </script>
+  <div class="card">
+ <img src="https://uploads.onecompiler.io/44fhurcgn/44g83jukc/8992.jpg" alt="Banner" width="100%">
+    <h4>A Recruitment Notification From IBM Consulting, Which is Recruiting People for Various Business and Technical Transformation Positions.</h4>
+ <h3>Recruitment: </h3><p>IBM Group Ltd is hiring for a number of positions within their organization. </p>
+ <h3>Opportunities: </h3><p>Competitive salary, global experience, and professional development opportunities. </p>
+ <h3>Culture: </h3><p>Offering an inclusive environment and comprehensive benefits including health and life insurance.</p>
+   
+    <div class="footer-grid">
+    <div class="footer-col">
+    <img src="https://uploads.onecompiler.io/44fhurcgn/44g8ftwqx/9005.png" width="100%" height="40%">
+    <p>As renegotiation of original five-year deal concludes.</p>
+    <p>IBM Australia is the recipient of a fresh five-year, $725 million whole-of-government arrangement.</p>
+    <img src="https://uploads.onecompiler.io/44fhurcgn/44g8dfjxs/9001.jpg" width="100" style="border-radius: 15px; opacity: 0.8; margin-top: 20px;">
+        </div>
+     <div class="footer-col">
+    <ul class="footer-links">
+       <li><a href="https:australia-gov-ibm-group-partnership.vercel.app/">Privacy Policy</a></li>
+       <li><a href="#">Copyright</a></li>
+       <li><a href="#">Accessibility</a></li>
+         <li><a href="#">Disclaimer</a></li>
+            <p style="color: #aaa;"><i class="fas fa-phone"></i> 61-800-IBM Ltd</p>
+            <p style="color: #aaa;"><i class="fas fa-envelope"></i> help@ibmgovt.com</p>
+            </ul>
+        </div>
+    </div>
+    <div class="copyright">
+        <p>© Commonwealth IBM Group of Australia 2026<i class="fas fa-home"></i></p>
+        <p style="font-size: 11px;">DSTO and IBM to collaborate on cyber security Research,</p>
+    </div>
 </body>
 </html>
